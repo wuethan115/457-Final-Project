@@ -364,6 +364,99 @@ print(rmse_compare)
 The RMSE comparison shows that the ARIMA(1,1,0) model achieves a slightly lower forecast error (RMSE = 1044.964) compared to the GARCH(1,1) model (RMSE = 1059.909). This indicates that, based on out-of-sample forecast accuracy, the ARIMA model performs marginally better in predicting cocoa futures prices. Although the GARCH model accounts for volatility, its added complexity does not translate into significantly improved forecast performance in this context. Therefore, the ARIMA(1,1,0) model is the better-performing model and will be selected as the final model to move forward with analysis.
 
 # Forecasting and Results
+```{r}
+
+best_arima <- auto.arima(
+  cocoa_ts,         
+  stepwise = FALSE,    
+  approximation = FALSE, 
+  trace = TRUE,          
+  seasonal = FALSE       
+)
+summary(best_arima)
+summary(arima_110)
+
+# Forecasting cocoa bean prices for the next year: 
+cocoa_forecast <- forecast(arima_110, h = 365)
+
+# Comparing to actual data: 
+cocoa_ts <- ts(cocoa_data$Price, frequency = 260)
+plot(cocoa_ts, main = "Plot of Cocoa Price Time Series vs. Forecast", 
+     xlab = "Time", ylab = "Prices", 
+     xlim = c(0, 33), ylim = c(-1000, 12000))
+lines(cocoa_forecast$mean, col = "red", lwd = 2)
+
+# Adding confidence intervals (80% and 95%)
+polygon(
+  x = c(time(cocoa_forecast$mean), rev(time(cocoa_forecast$mean))),
+  y = c(cocoa_forecast$lower[, 2], rev(cocoa_forecast$upper[, 2])),
+  col = rgb(0.8, 0.8, 1, 0.5), border = NA  
+)
+polygon(
+  x = c(time(cocoa_forecast$mean), rev(time(cocoa_forecast$mean))),
+  y = c(cocoa_forecast$lower[, 1], rev(cocoa_forecast$upper[, 1])),
+  col = rgb(0.6, 0.6, 1, 0.5), border = NA  
+)
+
+legend("topright",
+       legend = c("Actual Price", "ARIMA(1, 1, 0) Forecast", "80% CI", "95% CI"),
+       col = c("black", "red", rgb(0.6, 0.6, 1, 0.5), rgb(0.8, 0.8, 1, 0.5)),
+       lwd = c(1, 2, 8, 8),
+       bty = "n")
+
+arima_110$coef
+
+# Just repeating the steps with best_arima to compare: 
+best_cocoa_forecast <- forecast(best_arima, h = 365)
+cocoa_ts <- ts(cocoa_data$Price, frequency = 260)
+plot(cocoa_ts, main = "Plot of Cocoa Price Time Series vs. Forecast", 
+     xlab = "Time", ylab = "Prices", 
+     xlim = c(0, 33), ylim = c(-1000, 12000))
+lines(best_cocoa_forecast$mean, col = "green", lwd = 2)
+
+polygon(
+  x = c(time(best_cocoa_forecast$mean), rev(time(best_cocoa_forecast$mean))),
+  y = c(best_cocoa_forecast$lower[, 2], rev(best_cocoa_forecast$upper[, 2])),
+  col = rgb(0.8, 0.8, 1, 0.5), border = NA  
+)
+polygon(
+  x = c(time(best_cocoa_forecast$mean), rev(time(best_cocoa_forecast$mean))),
+  y = c(best_cocoa_forecast$lower[, 1], rev(best_cocoa_forecast$upper[, 1])),
+  col = rgb(0.6, 0.6, 1, 0.5), border = NA  
+)
+
+legend("topright",
+       legend = c("Actual Price", "ARIMA(0, 1, 5) Forecast", "80% CI", "95% CI"),
+       col = c("black", "green", rgb(0.6, 0.6, 1, 0.5), rgb(0.8, 0.8, 1, 0.5)),
+       lwd = c(1, 2, 8, 8),
+       bty = "n")
+
+best_arima$coef
+
+# Create a table demonstrating the the upper and lower bounds of the 95% CI, just to compare the widths of both models
+# We will compare the first three forcasted values and the last three forecasted values CI
+ci_95_arima_110 <- cbind(cocoa_forecast$lower[, 2], cocoa_forecast$upper[, 2])  # 95% CI
+first3_last3_ci_arima_110 <- function(ci_matrix) {
+  first_3 <- head(ci_matrix, 3)      
+  last_3  <- tail(ci_matrix, 3)      
+  rbind(first_3, last_3)            
+}
+ci_95_arima_110_summary <- first3_last3_ci_arima_110(ci_95_arima_110)
+print(ci_95_arima_110_summary)
+
+
+ci_95_arima_015 <- cbind(best_cocoa_forecast$lower[, 2], best_cocoa_forecast$upper[, 2])  # 95% CI
+first3_last3_ci_arima_015 <- function(ci_matrix) {
+  first_3 <- head(ci_matrix, 3)      
+  last_3  <- tail(ci_matrix, 3)      
+  rbind(first_3, last_3)            
+}
+ci_95_arima_015_summary <- first3_last3_ci_arima_015(ci_95_arima_015)
+print(ci_95_arima_015_summary)
+
+
+
+```
 
 # Discussion and Conclusion
 
